@@ -14,9 +14,9 @@ class Product(models.Model):
     stock = models.PositiveIntegerField()
     image = models.CharField()
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField()
+    updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField()
-    slug = models.SlugField(max_length=50)
+    slug = models.SlugField(max_length=50,unique=True)
     category = models.ForeignKey(Category,on_delete=models.CASCADE)
 
 
