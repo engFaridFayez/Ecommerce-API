@@ -9,11 +9,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self,attrs):
         data = super().validate(attrs)
 
-        user_logged_in.send(sender=self.user.__class__,request=self.context['request'],user=self.user)
-        refresh = self.get_token(self.user)
-
-        data['refresh'] = str(refresh)
-        data['access'] = str(refresh.access_token)
+        user_logged_in.send(sender=self.user.__class__,
+                            request=self.context['request'],
+                            user=self.user)
 
         data['is_admin'] = self.user.is_staff
         data['is_active'] = self.user.is_active

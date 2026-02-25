@@ -9,7 +9,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_is_blocked(self,obj):
         request = self.context['request']
-        return AxesProxyHandler.is_locked(request,{'username':obj})
+        return AxesProxyHandler.is_locked(request,{'username':obj.username})
 
     class Meta:
         model = CustomUser
@@ -25,6 +25,9 @@ class UserSerializer(serializers.ModelSerializer):
             'is_active',
             'is_blocked',
         ]
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
 
     def create(self, validated_data):
         password = validated_data.pop('password')
