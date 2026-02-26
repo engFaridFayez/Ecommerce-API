@@ -35,3 +35,30 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+    
+class RegisterSerializer(serializers.ModelSerializer):
+
+    confirm_password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = [
+            "id",
+            "username",
+            "password",
+            "confirm_password"
+        ]
+        extra_kwargs= {'password':{'write_only':True}}
+
+    def validate(self,attrs):
+        if attrs['password'] != attrs['confirm_password']:
+            raise serializers.ValidationError("Password and Confirm Password do not match.")
+        return attrs
+    
+    def create(self,validate_data):
+        password = validate_data.pop('password')
+        validate_data.pop('confirm_password')
+        user = CustomUser(**validate_data)
+        user.set_password(password)
+        user.save()
+        return user

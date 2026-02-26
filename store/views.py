@@ -1,5 +1,4 @@
 from rest_framework.generics import ListCreateAPIView ,RetrieveAPIView
-
 from store.models import Category, Product
 from store.serializers import CategorySerializer, ProductSerializer
 
@@ -20,3 +19,6 @@ class ProductDetailView(RetrieveAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     lookup_field = 'slug'
+
+
+
