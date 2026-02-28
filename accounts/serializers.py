@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from axes.handlers.proxy import AxesProxyHandler
 
-from accounts.models import CustomUser
+from accounts.models import CustomUser, Profile
 
 class UserSerializer(serializers.ModelSerializer):
 
@@ -62,3 +62,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+    
+class ProfileSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Profile
+        fields = ['bio','image']
+
+    def update(sel,instance,validated_data):
+        instance.image = validated_data.get('image', instance.image)
+        instance.save()
+        return instance
