@@ -104,3 +104,48 @@ class RemoveFromCart(APIView):
         cart_item.delete()
 
         return Response({"message":f"product {product.name} removed from cart successfully"},status=200)
+
+
+
+class UpdateCartItemQuantityView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @transaction.atomic
+    def put(self,request):
+        cart = request.user.cart
+        product_id = request.data.get("product")
+        quantity = request.data.get("quantity")
+
+        try:
+            quantity = int(quantity)
+        except(TypeError,ValueError):
+            return Response({"message": "Quantity must be a valid integer."}, status=400)
+        
+        if quantity < 0 :
+            return Response({"message":"Quantity must be greater than zero."},status=400)
+        
+        product = get_object_or_404(Product,pk=product_id)
+        cart_item = get_object_or_404(CartItem.objects.select_for_update(),cart=cart,product_id=product_id)
+
+        old_quantity = cart_item.quantity
+        new_quantity = quantity
+        diff = new_quantity - old_quantity
+
+        if new_quantity ==0:
+            product.stock += old_quantity
+            product.save()
+            cart_item.delete()
+            return Response({"message":"Item removed from cart"},status=200)
+        
+        if diff > 0 :
+            if diff > product.stock:
+                return Response({"message":"there is not enough quantity from this product available"},status=400)
+            product.stock -= diff
+            cart_item.quantity = new_quantity
+
+        if diff < 0 :
+            product.stock += abs(diff)
+            cart_item.quantity = new_quantity
+        
+        return 
+        
