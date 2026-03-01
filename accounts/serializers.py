@@ -3,6 +3,12 @@ from axes.handlers.proxy import AxesProxyHandler
 
 from accounts.models import CustomUser, Profile
 
+
+class DeleteUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['username']
+
 class UserSerializer(serializers.ModelSerializer):
 
     is_blocked = serializers.SerializerMethodField()
@@ -69,7 +75,14 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['bio','image']
 
-    def update(sel,instance,validated_data):
-        instance.image = validated_data.get('image', instance.image)
+    def update(self,instance,validated_data):
+        new_image = validated_data.get('image',None)
+
+        if new_image:
+            if instance.image:
+                instance.image.delete(save=False)
+            instance.image = new_image
+
+        instance.bio = validated_data.get('bio',instance.bio)
         instance.save()
         return instance

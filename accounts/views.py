@@ -1,7 +1,7 @@
-from rest_framework.generics import CreateAPIView ,RetrieveAPIView,UpdateAPIView
+from rest_framework.generics import CreateAPIView ,RetrieveAPIView,UpdateAPIView,DestroyAPIView
 from rest_framework.permissions import AllowAny
 from accounts.models import CustomUser, Profile
-from accounts.serializers import ProfileSerializer, RegisterSerializer
+from accounts.serializers import  DeleteUserSerializer, ProfileSerializer, RegisterSerializer
 from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.parsers import (MultiPartParser,FormParser)
@@ -13,6 +13,12 @@ class RegisterUser(CreateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
+
+class DeleteUser(DestroyAPIView):
+    queryset= CustomUser.objects.all()
+    serializer_class = DeleteUserSerializer
+    permission_classes = [AllowAny]
+    lookup_field = 'pk'
 
 class UserProfile(RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]

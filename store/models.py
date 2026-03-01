@@ -1,5 +1,7 @@
 from django.db import models
 
+from api import settings
+
 
 
 class Category(models.Model):
@@ -18,5 +20,18 @@ class Product(models.Model):
     is_active = models.BooleanField()
     slug = models.SlugField(max_length=50,unique=True)
     category = models.ForeignKey(Category,on_delete=models.CASCADE)
+
+class Cart(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name="cart")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart,on_delete=models.CASCADE)
+    product = models.ForeignKey(Product,on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+
+    class Meta:
+        unique_together = ('cart','product')
+
 
 
