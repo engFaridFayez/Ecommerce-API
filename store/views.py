@@ -1,6 +1,6 @@
-from rest_framework.generics import ListCreateAPIView ,RetrieveAPIView
-from store.models import CartItem, Category, Product
-from store.serializers import CartSerializer, CategorySerializer, ProductSerializer
+from rest_framework.generics import ListCreateAPIView ,RetrieveAPIView ,ListAPIView
+from store.models import Cart, CartItem, Category, Order, OrderItem, Product
+from store.serializers import CartItemSerializer, CartSerializer, CategorySerializer, ProductSerializer
 from rest_framework import permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -41,7 +41,7 @@ class AddToCartView(APIView):
             cart_item.quantity += quantity
             cart_item.save()
         
-        serializer = CartSerializer(cart_item)
+        serializer = CartItemSerializer(cart_item)
         return Response(serializer.data,status=200)
 
 
@@ -70,6 +70,7 @@ class AddToCartViewPro(APIView):
 
         new_quantity = quantity if created else cart_item.quantity + quantity
 
+
         if new_quantity > product.stock:
             return Response(
                 {"message": "Requested quantity exceeds available stock."},
@@ -80,7 +81,7 @@ class AddToCartViewPro(APIView):
             cart_item.quantity = new_quantity
             cart_item.save()
 
-        serializer = CartSerializer(cart_item)
+        serializer = CartItemSerializer(cart_item)
         return Response({
             "message": "Product added successfully",
             "cart_item": serializer.data
@@ -104,6 +105,20 @@ class RemoveFromCart(APIView):
         cart_item.delete()
 
         return Response({"message":f"product {product.name} removed from cart successfully"},status=200)
+
+# class ViewCart(ListAPIView):
+#     queryset = Cart.ob
+#     permission_classes = [permissions.IsAuthenticated]
+#     serializer_class = CartItemSerializer
+
+class ViewCart(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self,request):
+        cart = request.user.cart
+        serializer = CartSerializer(cart)
+        return Response(serializer.data,200)
+
 
 
 
@@ -131,21 +146,73 @@ class UpdateCartItemQuantityView(APIView):
         new_quantity = quantity
         diff = new_quantity - old_quantity
 
-        if new_quantity ==0:
+        if new_quantity == 0:
             product.stock += old_quantity
             product.save()
             cart_item.delete()
-            return Response({"message":"Item removed from cart"},status=200)
-        
-        if diff > 0 :
-            if diff > product.stock:
-                return Response({"message":"there is not enough quantity from this product available"},status=400)
-            product.stock -= diff
-            cart_item.quantity = new_quantity
+            return Response({"message": "Item removed from cart"}, status=200)
 
-        if diff < 0 :
+        # If increasing quantity
+        if diff > 0:
+            if diff > product.stock:
+                return Response(
+                    {"message": "Not enough stock available."},
+                    status=400
+                )
+            product.stock -= diff
+
+        # If decreasing quantity
+        elif diff < 0:
             product.stock += abs(diff)
-            cart_item.quantity = new_quantity
+
+        # Save updates
+        cart_item.quantity = new_quantity
+        cart_item.save()
+        product.save()
+
+        return Response(
+            {"message": "Quantity updated successfully"},
+            status=200
+        )
         
-        return 
+
+class CheckoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @transaction.atomic
+    def post(self,request):
+        cart = request.user.cart
+        cart_items = cart.items.all()
+        user = request.user
+
+
+        if not cart_items.exists():
+            return Response({"message":"Your cart is empty"},status=400)
         
+        order = Order.objects.create(user=user,total_price=0)
+
+        total = 0
+
+        for item in cart_items:
+            OrderItem.objects.create(
+                order = order,
+                product = item.product,
+                quantity = item.quantity,
+                price_at_purchase = item.product.price
+            )
+            total += item.product.price *item.quantity
+            product = item.product
+            if product.stock < item.quantity:
+                return Response({"message":"sorry this Product isn't available with this quantity"},status=400)
+            product.stock -= item.quantity
+            product.save()
+        
+        order.total_price = total
+
+        order.save()
+
+        cart_items.delete()
+
+
+        return Response({"message":"Order Created Successfully!"})
+

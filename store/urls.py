@@ -10,7 +10,11 @@ urlpatterns = [
     path('products/<slug:slug>/',views.ProductDetailView.as_view(),name='product-detail'),
     path('categories/',views.CategoryListCreateView.as_view(),name='categories'),
     path('cart/',views.AddToCartViewPro.as_view(),name='add-to-cart'),
-    path('cart/delete',views.RemoveFromCart.as_view(),name='remove-from-cart')
+    path('cart/update/',views.AddToCartViewPro.as_view(),name='add-to-cart'),
+    path('cart/delete',views.RemoveFromCart.as_view(),name='remove-from-cart'),
+    path('checkout/',views.CheckoutView.as_view(),name='checkout'),
+    path('cart/view-cart',views.ViewCart.as_view(),name='view-cart'),
+
 
 
 ]
